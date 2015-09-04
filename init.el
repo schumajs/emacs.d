@@ -31,6 +31,7 @@
 (setq backup-directory-alist '(("." . "~/.emacs.d/backup")))
 
 ;; tab width
+(setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 
 ;;
@@ -48,7 +49,7 @@
     '(ack-and-a-half clojure-mode expand-region haskell-mode markdown-mode
                      paredit python rainbow-mode solarized-theme
                      volatile-highlights yari zenburn-theme go-mode recentf
-                     auto-complete cc-mode cider company)
+                     auto-complete cc-mode cider company csharp-mode)
   "A list of packages to ensure are installed at launch.")
 
 (require 'cl)
@@ -75,6 +76,18 @@
 
 (add-to-list 'load-path "~/.emacs.d/vendor")
 
+;; sync $PATH
+(defun set-exec-path-from-shell-PATH ()
+  (let ((path-from-shell (replace-regexp-in-string
+                          "[ \t\n]*$"
+                          ""
+                          (shell-command-to-string "$SHELL --login -i -c 'echo $PATH'"))))
+    (setenv "PATH" path-from-shell)
+    (setq eshell-path-env path-from-shell) ; for eshell users
+    (setq exec-path (split-string path-from-shell path-separator))))
+
+(when window-system (set-exec-path-from-shell-PATH))
+
 ;; dirtree
 (require 'dirtree)
 
@@ -82,6 +95,9 @@
 (require 'auto-complete-config)
 (ac-config-default)
 (add-to-list 'ac-dictionary-directories "~/.emacs.d/vendor/auto-complete/dict")
+
+;; go mode
+;; (add-hook 'before-save-hook #'gofmt-before-save)
 
 ;; go mode + auto-complete
 (add-to-list 'ac-modes 'go-mode)
@@ -121,3 +137,13 @@
 (global-set-key (kbd "C-x <down>") 'windmove-down)
 (global-set-key (kbd "C-x <right>") 'windmove-right)
 (global-set-key (kbd "C-x <left>") 'windmove-left)
+
+;; tab width
+
+(setq tab-width 4) ; or any other preferred value
+
+;; c mode
+
+(defvaralias 'c-basic-offset 'tab-width)
+(setq c-basic-indent 4)
+
