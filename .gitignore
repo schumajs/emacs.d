@@ -1,0 +1,8 @@
+ac-comphist.dat
+elpa
+
+*~
+*.lock
+*.DS_Store
+*.swp
+*.out
