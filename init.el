@@ -142,10 +142,6 @@
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
 
-;; ... + customizations
-(defvaralias 'c-basic-offset 'tab-width)
-(setq c-basic-indent 4)
-
 ;; leerzeichen
 (require 'leerzeichen)
 (add-hook 'css-mode-hook #'rainbow-delimiters-mode)
