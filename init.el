@@ -1,43 +1,4 @@
-;;
-;; config
-;;
-
-;; disable menu bar
-(menu-bar-mode 0)
-
-;; disable tool bar
-(tool-bar-mode -1)
-
-;; transparent background
-(set-frame-parameter (selected-frame) 'alpha '(75 75))
-(add-to-list 'default-frame-alist '(alpha 75 75))
-(set-face-attribute 'default nil :background "black" :foreground "white")
-
-;; column / line number mode
-(line-number-mode 1)
-(column-number-mode 1)
-
-;; hightlight current line
-(global-hl-line-mode 1)
-(set-face-background 'hl-line "#222")
-
-;; word wrapping
-(setq-default word-wrap t)
-
-;; column line where text should be wrapped
-(setq-default fill-column 80)
-
-;; store backup files in .emacs.d/
-(setq backup-directory-alist '(("." . "~/.emacs.d/backup")))
-
-;; tab width
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
-
-;;
 ;; elpa
-;;
-
 (require 'package)
 (package-initialize)
 
@@ -48,12 +9,8 @@
 
 ;; auto installed packaged
 (defvar prelude-packages
-    '(ack-and-a-half clojure-mode expand-region haskell-mode markdown-mode
-                     paredit python rainbow-delimiters solarized-theme
-                     volatile-highlights yari zenburn-theme go-mode recentf
-                     auto-complete auto-complete-clang cc-mode cider company
-                     csharp-mode leerzeichen flycheck js2-mode json-mode
-                     exec-path-from-shell markdown-mode)
+  '(color-theme-solarized exec-path-from-shell helm ggtags helm-gtags
+    sr-speedbar company company-c-headers)
   "A list of packages to ensure are installed at launch.")
 
 (require 'cl)
@@ -74,62 +31,43 @@
 
 (provide 'prelude-packages)
 
-;;
-;; customizations
-;;
-
+;; vendor path
 (add-to-list 'load-path "~/.emacs.d/vendor")
 
-;; sync $PATH
-;;(defun set-exec-path-from-shell-PATH ()
-;;  (let ((path-from-shell (replace-regexp-in-string
-;;                          "[ \t\n]*$"
-;;                          ""
-;;                          (shell-command-to-string "$SHELL --login -i -c 'echo $PATH'"))))
-;;    (setenv "PATH" path-from-shell)
-;;    (setq eshell-path-env path-from-shell) ; for eshell users
-;;    (setq exec-path (split-string path-from-shell path-separator))))
-;;
-;; (when window-system (set-exec-path-from-shell-PATH))
+;; disable menu bar
+(menu-bar-mode 0)
 
-;; https://github.com/purcell/exec-path-from-shell
-;; only need exec-path-from-shell on OSX
-;; this hopefully sets up path and other vars better
-(when (memq window-system '(mac ns))
-  (exec-path-from-shell-initialize))
+;; disable tool bar
+(tool-bar-mode -1)
 
-;; go
-;; (add-hook 'before-save-hook #'gofmt-before-save)
+;; transparent background
+;; (set-frame-parameter (selected-frame) 'alpha '(90 90))
+;; (add-to-list 'default-frame-alist '(alpha 90 90))
+;; (set-face-attribute 'default nil :background "black" :foreground "white")
 
-;; cider
-(add-hook 'cider-mode-hook #'eldoc-mode)
-(setq nrepl-log-messages t)
-(setq nrepl-hide-special-buffers t)
-(setq cider-stacktrace-fill-column 80)
-(setq cider-repl-display-in-current-window t)
-(setq cider-prompt-save-file-on-load nil)
-(setq cider-repl-result-prefix ";; => ")
-(add-to-list 'exec-path "/usr/local/bin")
-(setq cider-show-error-buffer nil)
+;; column / line number mode
+(line-number-mode 1)
+(column-number-mode 1)
 
-;; paredit + cider
-(add-hook 'cider-repl-mode-hook #'paredit-mode)
+;; hightlight current line
+(global-hl-line-mode 1)
+(set-face-background 'hl-line "#222")
 
-;; rainbow
-(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+;; word wrapping
+(setq-default word-wrap t)
+(setq-default fill-column 80)
 
-;; company + cider
-(add-hook 'cider-repl-mode-hook #'company-mode)
-(add-hook 'cider-mode-hook #'company-mode)
+;; store backup files in .emacs.d/
+(setq backup-directory-alist '(("." . "~/.emacs.d/backup")))
 
-;; icomplete
-(require 'icomplete)
+;; tab width
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
 
-;; recentf
-(require 'recentf)
-(recentf-mode 1)
-(setq recentf-max-menu-items 25)
-(global-set-key "\C-x\ \C-r" 'recentf-open-files)
+;; indention
+(global-set-key (kbd "RET") 'newline-and-indent)
+(global-set-key (kbd "C-c w") 'whitespace-mode)
+(add-hook 'prog-mode-hook (lambda () (interactive) (setq show-trailing-whitespace 1)))
 
 ;; move between windows
 (global-set-key (kbd "C-x <up>") 'windmove-up)
@@ -137,35 +75,83 @@
 (global-set-key (kbd "C-x <right>") 'windmove-right)
 (global-set-key (kbd "C-x <left>") 'windmove-left)
 
+;; paths
+(when (memq window-system '(mac ns))
+  (exec-path-from-shell-initialize))
+
+;; theme
+(set-frame-parameter nil 'background-mode 'dark)
+(set-terminal-parameter nil 'background-mode 'dark)
+(load-theme 'solarized t)
+
+;; recentf
+(require 'recentf)
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
+(global-set-key "\C-x\ \C-r" 'recentf-open-files)
+
+;; helm
+(require 'helm)
+(global-set-key (kbd "M-x") 'helm-M-x)
+
+;; ggtags
+(require 'ggtags)
+
+(add-hook 'c-mode-common-hook
+          (lambda ()
+            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+              (ggtags-mode 1))))
+
+(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
+(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
+(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
+(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
+(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
+(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
+(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
+
+;; helm + ggtags
+(setq helm-gtags-ignore-case t
+      helm-gtags-auto-update t
+      helm-gtags-use-input-at-cursor t
+      helm-gtags-pulse-at-cursor t
+      helm-gtags-prefix-key "\C-cg"
+      helm-gtags-suggested-key-mapping t)
+
+(require 'helm-gtags)
+
+(add-hook 'dired-mode-hook 'helm-gtags-mode)
+(add-hook 'eshell-mode-hook 'helm-gtags-mode)
+(add-hook 'c-mode-hook 'helm-gtags-mode)
+(add-hook 'c++-mode-hook 'helm-gtags-mode)
+(add-hook 'asm-mode-hook 'helm-gtags-mode)
+
+(define-key helm-gtags-mode-map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
+(define-key helm-gtags-mode-map (kbd "C-j") 'helm-gtags-select)
+(define-key helm-gtags-mode-map (kbd "M-.") 'helm-gtags-dwim)
+(define-key helm-gtags-mode-map (kbd "M-,") 'helm-gtags-pop-stack)
+(define-key helm-gtags-mode-map (kbd "C-c <") 'helm-gtags-previous-history)
+(define-key helm-gtags-mode-map (kbd "C-c >") 'helm-gtags-next-history)
+
+;; speedbar
+(setq speedbar-show-unknown-files t)
+
+;; company
+(require 'company)
+(add-hook 'after-init-hook 'global-company-mode)
+
+(setq company-backends (delete 'company-semantic company-backends))
+
+;; c/c++
+(require 'cc-mode)
+
+;; c/c++ + company
+;; (define-key c-mode-map  [(tab)] 'company-complete)
+;; (define-key c++-mode-map  [(tab)] 'company-complete)
+(global-set-key (kbd "C-.") 'company-complete)
+(add-to-list 'company-backends 'company-c-headers)
+
 ;; google c/c++ style guide
 (require 'google-c-style)
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
-
-;; leerzeichen
-(require 'leerzeichen)
-(add-hook 'css-mode-hook #'rainbow-delimiters-mode)
-
-;; auto-complete
-(require 'auto-complete-config)
-(ac-config-default)
-(add-to-list 'ac-dictionary-directories "~/.emacs.d/vendor/auto-complete/dict")
-(add-to-list 'ac-modes 'cc-mode)
-(add-to-list 'ac-modes 'go-mode)
-(add-to-list 'ac-modes 'clojure-mode)
-(add-to-list 'ac-modes 'css-mode)
-(add-to-list 'ac-modes 'js2-mode)
-(add-to-list 'ac-modes 'json-mode)
-(add-to-list 'ac-modes 'web-mode)
-
-;; auto-complete-clang
-(require 'auto-complete-clang)
-
-;; http://www.flycheck.org/manual/latest/index.html
-(require 'flycheck)
-
-;; turn on flychecking globally
-(add-hook 'after-init-hook #'global-flycheck-mode)
-
-;; use c++11 when flychecking
-(add-hook 'c++-mode-hook (lambda () (setq flycheck-gcc-language-standard "c++11")))
