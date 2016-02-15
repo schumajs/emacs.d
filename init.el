@@ -31,6 +31,10 @@
 
 (provide 'prelude-packages)
 
+;; system paths
+(when (memq window-system '(mac ns))
+  (exec-path-from-shell-initialize))
+
 ;; vendor path
 (add-to-list 'load-path "~/.emacs.d/vendor")
 
@@ -74,10 +78,6 @@
 (global-set-key (kbd "C-x <down>") 'windmove-down)
 (global-set-key (kbd "C-x <right>") 'windmove-right)
 (global-set-key (kbd "C-x <left>") 'windmove-left)
-
-;; paths
-(when (memq window-system '(mac ns))
-  (exec-path-from-shell-initialize))
 
 ;; theme
 (set-frame-parameter nil 'background-mode 'dark)
