@@ -9,8 +9,8 @@
 
 ;; auto installed packaged
 (defvar prelude-packages
-  '(color-theme-solarized exec-path-from-shell helm ggtags helm-gtags
-    sr-speedbar company company-c-headers)
+  '(color-theme-solarized exec-path-from-shell dired-subtree helm ggtags
+    helm-gtags sr-speedbar company company-c-headers)
   "A list of packages to ensure are installed at launch.")
 
 (require 'cl)
@@ -61,6 +61,10 @@
 (setq-default word-wrap t)
 (setq-default fill-column 80)
 
+;; word wrapping indicator
+(setq-default whitespace-line-column 80 whitespace-style '(face lines-tail))
+(add-hook 'prog-mode-hook #'whitespace-mode)
+
 ;; store backup files in .emacs.d/
 (setq backup-directory-alist '(("." . "~/.emacs.d/backup")))
 
@@ -92,7 +96,11 @@
 
 ;; helm
 (require 'helm)
+
 (global-set-key (kbd "M-x") 'helm-M-x)
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(global-set-key (kbd "C-x b") 'helm-buffers-list)
+(global-set-key (kbd "C-x C-b") 'helm-buffers-list)
 
 ;; ggtags
 (require 'ggtags)
@@ -110,7 +118,7 @@
 (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
 (define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
 
-;; helm + ggtags
+;; ggtags + helm
 (setq helm-gtags-ignore-case t
       helm-gtags-auto-update t
       helm-gtags-use-input-at-cursor t
@@ -133,8 +141,43 @@
 (define-key helm-gtags-mode-map (kbd "C-c <") 'helm-gtags-previous-history)
 (define-key helm-gtags-mode-map (kbd "C-c >") 'helm-gtags-next-history)
 
+;; eshell
+(defun eshell/clear ()
+  "Clear the eshell buffer."
+  (let ((inhibit-read-only t))
+    (erase-buffer)
+    (eshell-send-input)))
+
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (eshell-cmpl-initialize)
+            (define-key eshell-mode-map (kbd "C-l") (lambda () (interactive) (eshell/clear)))))
+
+;; eshell + helm
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (eshell-cmpl-initialize)
+            (define-key eshell-mode-map [remap pcomplete] 'helm-esh-pcomplete)
+            (define-key eshell-mode-map (kbd "M-p") 'helm-eshell-history)))
+
+(defun pcomplete/sudo ()
+  (let ((prec (pcomplete-arg 'last -1)))
+    (cond ((string= "sudo" prec)
+           (while (pcomplete-here*
+                   (funcall pcomplete-command-completion-function)
+                   (pcomplete-arg 'last) t))))))
+
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (define-key eshell-mode-map
+              (kbd "M-p")
+              'helm-eshell-history)))
+
 ;; speedbar
 (setq speedbar-show-unknown-files t)
+(setq speedbar-update-flag nil)
+
+(setq sr-speedbar-auto-refresh nil)
 
 ;; company
 (require 'company)
@@ -146,12 +189,27 @@
 (require 'cc-mode)
 
 ;; c/c++ + company
-;; (define-key c-mode-map  [(tab)] 'company-complete)
-;; (define-key c++-mode-map  [(tab)] 'company-complete)
-(global-set-key (kbd "C-.") 'company-complete)
+(defun complete-or-indent ()
+    (interactive)
+    (if (company-manual-begin)
+        (company-complete-common)
+      (indent-according-to-mode)))
+
+(defun indent-or-complete ()
+    (interactive)
+    (if (looking-at "\\_>")
+        (company-complete-common)
+      (indent-according-to-mode)))
+
+(define-key c-mode-map  [(tab)] 'indent-or-complete)
+(define-key c++-mode-map  [(tab)] 'indent-or-complete)
+
+;; (global-set-key (kbd "C-.") 'company-complete)
+
 (add-to-list 'company-backends 'company-c-headers)
 
 ;; google c/c++ style guide
 (require 'google-c-style)
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
+(put 'erase-buffer 'disabled nil)
