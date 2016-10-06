@@ -10,7 +10,8 @@
 ;; auto installed packaged
 (defvar prelude-packages
   '(color-theme-solarized exec-path-from-shell dired-subtree helm ggtags
-    helm-gtags sr-speedbar company company-c-headers)
+    helm-gtags sr-speedbar company company-c-headers go-mode better-defaults
+    material-theme elpy dockerfile-mode markdown-mode yaml-mode)
   "A list of packages to ensure are installed at launch.")
 
 (require 'cl)
@@ -45,9 +46,9 @@
 (tool-bar-mode -1)
 
 ;; transparent background
-;; (set-frame-parameter (selected-frame) 'alpha '(90 90))
-;; (add-to-list 'default-frame-alist '(alpha 90 90))
-;; (set-face-attribute 'default nil :background "black" :foreground "white")
+(set-frame-parameter (selected-frame) 'alpha '(90 90))
+(add-to-list 'default-frame-alist '(alpha 90 90))
+(set-face-attribute 'default nil :background "black" :foreground "white")
 
 ;; column / line number mode
 (line-number-mode 1)
@@ -86,7 +87,8 @@
 ;; theme
 (set-frame-parameter nil 'background-mode 'dark)
 (set-terminal-parameter nil 'background-mode 'dark)
-(load-theme 'solarized t)
+;; (load-theme 'solarized t)
+(load-theme 'material t)
 
 ;; recentf
 (require 'recentf)
