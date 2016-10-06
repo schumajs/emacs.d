@@ -11,7 +11,8 @@
 (defvar prelude-packages
   '(color-theme-solarized exec-path-from-shell dired-subtree helm ggtags
     helm-gtags sr-speedbar company company-c-headers go-mode better-defaults
-    material-theme elpy dockerfile-mode markdown-mode yaml-mode)
+    material-theme elpy dockerfile-mode markdown-mode yaml-mode flycheck
+    js2-mode json-mode exec-path-from-shell sass-mode)
   "A list of packages to ensure are installed at launch.")
 
 (require 'cl)
@@ -85,8 +86,8 @@
 (global-set-key (kbd "C-x <left>") 'windmove-left)
 
 ;; theme
-(set-frame-parameter nil 'background-mode 'dark)
-(set-terminal-parameter nil 'background-mode 'dark)
+;; (set-frame-parameter nil 'background-mode 'dark)
+;; (set-terminal-parameter nil 'background-mode 'dark)
 ;; (load-theme 'solarized t)
 (load-theme 'material t)
 
@@ -112,6 +113,9 @@
             (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
               (ggtags-mode 1))))
 
+(add-hook 'js2-mode-hook 'ggtags-mode)
+(add-hook 'go-mode-hook 'ggtags-mode)
+
 (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
 (define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
 (define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
@@ -134,7 +138,10 @@
 (add-hook 'eshell-mode-hook 'helm-gtags-mode)
 (add-hook 'c-mode-hook 'helm-gtags-mode)
 (add-hook 'c++-mode-hook 'helm-gtags-mode)
+(add-hook 'java-mode-hook 'helm-gtags-mode)
 (add-hook 'asm-mode-hook 'helm-gtags-mode)
+(add-hook 'js2-mode-hook 'helm-gtags-mode)
+(add-hook 'go-mode-hook 'helm-gtags-mode)
 
 (define-key helm-gtags-mode-map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
 (define-key helm-gtags-mode-map (kbd "C-j") 'helm-gtags-select)
@@ -215,3 +222,44 @@
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
 (put 'erase-buffer 'disabled nil)
+
+;; http://www.flycheck.org/manual/latest/index.html
+(require 'flycheck)
+
+;; turn on flychecking globally
+(add-hook 'after-init-hook #'global-flycheck-mode)
+
+;;
+;; http://codewinds.com/blog/2015-04-02-emacs-flycheck-eslint-jsx.html
+;; npm install -g eslint babel-eslint eslint-plugin-react
+;;
+
+;; disable jshint since we prefer eslint checking
+(setq-default flycheck-disabled-checkers
+  (append flycheck-disabled-checkers
+    '(javascript-jshint)))
+
+;; customize flycheck temp file prefix
+(setq-default flycheck-temp-prefix ".flycheck")
+
+;; disable json-jsonlist checking for json files
+(setq-default flycheck-disabled-checkers
+  (append flycheck-disabled-checkers
+    '(json-jsonlist)))
+
+;; https://github.com/purcell/exec-path-from-shell
+;; only need exec-path-from-shell on OSX
+;; this hopefully sets up path and other vars better
+(when (memq window-system '(mac ns))
+  (exec-path-from-shell-initialize))
+
+(custom-set-variables
+ '(js2-basic-offset 2)
+ '(js2-bounce-indent-p t))
+
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+
+(require 'sass-mode)
+
+(add-to-list 'auto-mode-alist '("\\.scss\\'" . sass-mode))
+
