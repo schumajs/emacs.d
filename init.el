@@ -10,26 +10,28 @@
 ;; auto installed packaged
 (defvar prelude-packages
   '(color-theme-solarized exec-path-from-shell dired-subtree helm ggtags
-    helm-gtags sr-speedbar company company-c-headers go-mode better-defaults
-    material-theme elpy dockerfile-mode markdown-mode yaml-mode flycheck
-    js2-mode json-mode exec-path-from-shell sass-mode)
+                          helm-gtags sr-speedbar company company-c-headers
+                          go-mode better-defaults material-theme elpy
+                          dockerfile-mode markdown-mode yaml-mode flycheck
+                          js2-mode json-mode exec-path-from-shell sass-mode
+                          toml-mode)
   "A list of packages to ensure are installed at launch.")
 
 (require 'cl)
 (defun prelude-packages-installed-p ()
-    (loop for p in prelude-packages
-          when (not (package-installed-p p)) do (return nil)
-          finally (return t)))
+  (loop for p in prelude-packages
+        when (not (package-installed-p p)) do (return nil)
+        finally (return t)))
 
 (unless (prelude-packages-installed-p)
-    ;; check for new packages (package versions)
-    (message "%s" "Emacs Prelude is now refreshing its package database...")
-    (package-refresh-contents)
-    (message "%s" " done.")
-    ;; install the missing packages
-    (dolist (p prelude-packages)
-      (when (not (package-installed-p p))
-        (package-install p))))
+  ;; check for new packages (package versions)
+  (message "%s" "Emacs Prelude is now refreshing its package database...")
+  (package-refresh-contents)
+  (message "%s" " done.")
+  ;; install the missing packages
+  (dolist (p prelude-packages)
+    (when (not (package-installed-p p))
+      (package-install p))))
 
 (provide 'prelude-packages)
 
@@ -49,7 +51,7 @@
 ;; transparent background
 (set-frame-parameter (selected-frame) 'alpha '(90 90))
 (add-to-list 'default-frame-alist '(alpha 90 90))
-(set-face-attribute 'default nil :background "black" :foreground "white")
+;; (set-face-attribute 'default nil :background "black" :foreground "white")
 
 ;; column / line number mode
 (line-number-mode 1)
@@ -160,7 +162,8 @@
 (add-hook 'eshell-mode-hook
           (lambda ()
             (eshell-cmpl-initialize)
-            (define-key eshell-mode-map (kbd "C-l") (lambda () (interactive) (eshell/clear)))))
+            (define-key eshell-mode-map (kbd "C-l") (lambda () (interactive)
+                                                      (eshell/clear)))))
 
 ;; eshell + helm
 (add-hook 'eshell-mode-hook
@@ -199,16 +202,16 @@
 
 ;; c/c++ + company
 (defun complete-or-indent ()
-    (interactive)
-    (if (company-manual-begin)
-        (company-complete-common)
-      (indent-according-to-mode)))
+  (interactive)
+  (if (company-manual-begin)
+      (company-complete-common)
+    (indent-according-to-mode)))
 
 (defun indent-or-complete ()
-    (interactive)
-    (if (looking-at "\\_>")
-        (company-complete-common)
-      (indent-according-to-mode)))
+  (interactive)
+  (if (looking-at "\\_>")
+      (company-complete-common)
+    (indent-according-to-mode)))
 
 (define-key c-mode-map  [(tab)] 'indent-or-complete)
 (define-key c++-mode-map  [(tab)] 'indent-or-complete)
@@ -236,16 +239,16 @@
 
 ;; disable jshint since we prefer eslint checking
 (setq-default flycheck-disabled-checkers
-  (append flycheck-disabled-checkers
-    '(javascript-jshint)))
+              (append flycheck-disabled-checkers
+                      '(javascript-jshint)))
 
 ;; customize flycheck temp file prefix
 (setq-default flycheck-temp-prefix ".flycheck")
 
 ;; disable json-jsonlist checking for json files
 (setq-default flycheck-disabled-checkers
-  (append flycheck-disabled-checkers
-    '(json-jsonlist)))
+              (append flycheck-disabled-checkers
+                      '(json-jsonlist)))
 
 ;; https://github.com/purcell/exec-path-from-shell
 ;; only need exec-path-from-shell on OSX
@@ -253,13 +256,83 @@
 (when (memq window-system '(mac ns))
   (exec-path-from-shell-initialize))
 
-(custom-set-variables
- '(js2-basic-offset 2)
- '(js2-bounce-indent-p t))
-
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+
+;; (custom-set-variables
+;;  '(js2-basic-offset 2)
+;;  '(js2-bounce-indent-p t))
+
+(add-hook 'js2-mode-hook
+          (lambda ()
+            (make-local-variable 'js-indent-level)
+            (setq js-indent-level 2)))
+
+(add-hook 'json-mode-hook
+          (lambda ()
+            (make-local-variable 'js-indent-level)
+            (setq js-indent-level 2)))
 
 (require 'sass-mode)
 
 (add-to-list 'auto-mode-alist '("\\.scss\\'" . sass-mode))
 
+;;
+;; https://pylint.readthedocs.io/en/latest/user_guide/ide-integration.html
+;; pip3 install pylint
+;;
+
+;; configure flymake for Python
+(when (load "flymake" t)
+  (defun flymake-pylint-init ()
+    (let* ((temp-file (flymake-init-create-temp-buffer-copy
+                       'flymake-create-temp-inplace))
+           (local-file (file-relative-name
+                        temp-file
+                        (file-name-directory buffer-file-name))))
+      (list "epylint" (list local-file))))
+  (add-to-list 'flymake-allowed-file-name-masks
+               '("\\.py\\'" flymake-pylint-init)))
+
+;; set as a minor mode for Python
+(add-hook 'python-mode-hook '(lambda () (flymake-mode)))
+
+;; configure to wait a bit longer after edits before starting
+(setq-default flymake-no-changes-timeout '3)
+
+;; keymaps to navigate to the errors
+(add-hook 'python-mode-hook
+          '(lambda ()
+             (define-key python-mode-map "\C-cn" 'flymake-goto-next-error)))
+(add-hook 'python-mode-hook
+          '(lambda ()
+             (define-key python-mode-map "\C-cp" 'flymake-goto-prev-error)))
+
+;; to avoid having to mouse hover for the error message, these functions make
+;; flymake error messages appear in the minibuffer
+(defun show-fly-err-at-point ()
+  "If the cursor is sitting on a flymake error, display the message in the minibuffer"
+  (require 'cl)
+  (interactive)
+  (let ((line-no (line-number-at-pos)))
+    (dolist (elem flymake-err-info)
+      (if (eq (car elem) line-no)
+      (let ((err (car (second elem))))
+        (message "%s" (flymake-ler-text err)))))))
+
+(add-hook 'post-command-hook 'show-fly-err-at-point)
+
+(require 'toml-mode)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (toml-mode yaml-mode web-mode sr-speedbar sass-mode recentf-ext material-theme markdown-mode json-mode js2-mode helm-gtags go-mode ggtags flycheck exec-path-from-shell elpy dockerfile-mode dired-subtree company-c-headers color-theme-solarized better-defaults))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
